@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         unique: true,
         validate(value) {
-            if(!validator.isEmail(value)){
+            if (!validator.isEmail(value)) {
                 throw new Error('Invalid Email.')
             }
         }
@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
         minlength: 7,
         validate(value) {
-            if(value.toLowerCase().includes('password')){
+            if (value.toLowerCase().includes('password')) {
                 throw new Error('Password cannot contain password.')
             }
         }
@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema({
         required: false,
         default: 0,
         validate(value) {
-            if(value < 0) {
+            if (value < 0) {
                 throw new Error('Please enter valid age.')
             }
         }
@@ -49,6 +49,16 @@ const userSchema = new mongoose.Schema({
         }
     }]
 })
+
+userSchema.methods.toJSON = function () {
+    const user = this
+    userObject = user.toObject()
+
+    delete userObject.password
+    delete userObject.tokens
+
+    return userObject
+}
 
 userSchema.methods.generateAuthToken = async function () {
     const user = this
@@ -64,13 +74,13 @@ userSchema.methods.generateAuthToken = async function () {
 userSchema.statics.findByCredentials = async (email, password) => {
     const user = await User.findOne({ email })
 
-    if(!user){
+    if (!user) {
         throw new Error('Unable to login.')
     }
 
     const isMatch = await bcrypt.compare(password, user.password)
 
-    if(!isMatch) {
+    if (!isMatch) {
         throw new Error('Unable to login.')
     }
     return user
@@ -78,7 +88,7 @@ userSchema.statics.findByCredentials = async (email, password) => {
 
 userSchema.pre('save', async function (next) {
     const user = this
-    if(user.isModified('password')) {
+    if (user.isModified('password')) {
         user.password = await bcrypt.hash(user.password, 8)
     }
 
